@@ -24,6 +24,7 @@ void AuthenticationPlugin(app.Manager manager) {
         ProtectedUser user;
         try
         {
+            MongoDb db = app.request.attributes.dbConn;
             user = await db.findOne
             (
                 Col.user,

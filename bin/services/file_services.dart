@@ -2,12 +2,16 @@ part of aristadart.server;
 
 @app.Group('/file')
 @Catch()
-class FileServices
+class FileServices extends AristaService<FileDb>
 {
+    FileServices (MongoService mongoService) : super (Col.file, mongoService);
+    
+    GridFS get fs => new GridFS(mongoDb.innerConn);
+    
     @app.DefaultRoute(methods: const[app.POST], allowMultipartRequest: true)
     @Private()
     @Encode()
-    Future<FileDb> NewOrUpdate (@app.Body(app.FORM) Map form, 
+    Future<FileDb> New (@app.Body(app.FORM) Map form, 
                                 @Decode(fromQueryParams: true) FileDb queryMetadata,
                                 {String id, String ownerId}) async
     {
@@ -54,8 +58,9 @@ class FileServices
         print ("Metadata es ${encode(newMetadata)}");
         
         
+        
         //Convert to map and clean null fields
-        var metadataMap = cleanMap(db.encode(newMetadata));
+        var metadataMap = cleanMap(mongoDb.encode(newMetadata));
         
         //Save metadata
         gridIn.metaData = metadataMap;
@@ -103,7 +108,7 @@ class FileServices
         if (gridOut == null)
             throw new app.ErrorResponse(400, "El archivo no existe");
         
-        return db.decode(gridOut.metaData, FileDb);
+        return mongoDb.decode(gridOut.metaData, FileDb);
         
     }
     
@@ -114,7 +119,7 @@ class FileServices
     {
         FileDb metadata = await GetMetadata(id);
         Ref obj = await Delete (id);
-        FileDb fileDb = await NewOrUpdate(form, metadata, id: id, ownerId: ownerId);
+        FileDb fileDb = await New(form, metadata, id: id, ownerId: ownerId);
         
         return fileDb;
     }
@@ -148,7 +153,7 @@ class FileServices
                     => (file.contentType as String).contains(type) || file.metadata.type == type);
         
         
-        return stream.map((QueryMap file) => db.decode(file.metadata, FileDb)).toList();
+        return stream.map((QueryMap file) => mongoDb.decode(file.metadata, FileDb)).toList();
     }
     
     @app.Route('/allImages', methods: const[app.GET])
@@ -157,6 +162,24 @@ class FileServices
     Future AllImages () async
     {
         return All ('image');
+    }
+    
+    Future<List<dynamic>> deleteFile (String id)
+    {
+        var fileId = StringToId(id);
+        
+        var removeFiles = fs.files.remove (where.id (fileId));
+        var removeChunks = fs.chunks.remove (where.eq ('files_id', fileId));
+            
+        return Future.wait([removeChunks, removeFiles]);  
+    }
+    
+    Stream<List<int>> getData (GridOut gridOut)
+    {
+        var controller = new StreamController<List<int>>();
+        var sink = new IOSink (controller);
+        gridOut.writeTo(sink).then((n) => sink.close());
+        return controller.stream;
     }
     
 }

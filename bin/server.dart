@@ -8,6 +8,7 @@ import 'package:redstone/server.dart' as app;
 import 'package:redstone_mapper/plugin.dart';
 import 'package:redstone_mapper_mongo/manager.dart';
 import 'package:mongo_dart/mongo_dart.dart';
+import 'package:di/di.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf_static/shelf_static.dart';
 import 'utils/utils.dart';
@@ -15,7 +16,7 @@ import 'dart:async';
 
 main() async
 {
-    var con = "mongodb://${partialDBHost}/test";
+    var con = "mongodb://${partialDBHost}/gs";
     
     print (con);
     
@@ -24,6 +25,13 @@ main() async
     app.addPlugin(getMapperPlugin(dbManager));
     app.addPlugin(AuthenticationPlugin);
     app.addPlugin(ErrorCatchPlugin);
+    app.addPlugin(PrintHeadersPlugin);
+    
+    app.addModule (new Module()
+        ..bind(UserServives)
+        ..bind(GoogleServices)
+        ..bind(FileServices)
+        ..bind(MongoService));
     
     app.setShelfHandler (createStaticHandler
     (
@@ -33,7 +41,7 @@ main() async
     ));
      
     app.setupConsoleLog();
-    await app.start(port: port); 
+    await app.start(port: port, autoCompress: true); 
     
     MongoDb dbConn = await dbManager.getConnection();  
     

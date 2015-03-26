@@ -4,12 +4,13 @@ import 'package:redstone_mapper/mapper.dart';
 import 'package:redstone_mapper_mongo/metadata.dart';
 //import 'package:redstone/query_map.dart';
 import 'dart:convert';
+import "package:googleapis_auth/auth.dart" as auth;
 
 part 'models/user.dart';
 part 'models/file.dart';
+part 'models/json_access_credentials.dart';
 
-
-const int tipoBuild = TipoBuild.deploy;
+const int tipoBuild = TipoBuild.desarrollo;
 
 int get port => 9090;
 
@@ -112,6 +113,7 @@ abstract class Col
     static const String cloudTarget = 'cloudTarget';
     static const String objetoUnity = 'objetoUnity';
     static const String localTarget = 'localTarget';
+    static const String file = "file";
 }
 
 abstract class ErrCode

@@ -1,31 +1,46 @@
-// Copyright (c) 2015, <your name>. All rights reserved. Use of this source code
-// is governed by a BSD-style license that can be found in the LICENSE file.
+library aristadart.main;
 
-import 'dart:html';
 
-//import 'package:GestionSystem/nav_menu.dart';
-//import 'package:GestionSystem/reverser.dart';
-import 'package:route_hierarchical/client.dart';
+import 'package:angular/angular.dart';
+import 'package:angular/routing/module.dart';
+import 'package:angular/application_factory.dart';
+import 'package:logging/logging.dart';
 
-void main() {
-//  initNavMenu();
-//  initReverser();
 
-  // Webapps need routing to listen for changes to the URL.
-  var router = new Router();
-  router.root
-    ..addRoute(name: 'about', path: '/about', enter: showAbout)
-    ..addRoute(name: 'home', defaultRoute: true, path: '/', enter: showHome);
-  router.listen();
+import 'package:redstone_mapper/mapper_factory.dart';
+import 'package:GestionSystem/arista_client.dart';
+
+
+@MirrorsUsed(override: '*')
+import 'dart:mirrors';
+
+class MyAppModule extends Module
+{
+    MyAppModule()
+    {
+        //Views
+        
+        //Services
+        bind (ClientUserServices);
+        bind (ClientFileServices);
+        //Router
+        bind (RouteInitializerFn, toValue: recipeBookRouteInitializer);
+        bind (NgRoutingUsePushState, toValue: new NgRoutingUsePushState.value(false));
+    }
 }
 
-void showAbout(RouteEvent e) {
-  // Extremely simple and non-scalable way to show different views.
-  querySelector('#home').style.display = 'none';
-  querySelector('#about').style.display = '';
-}
 
-void showHome(RouteEvent e) {
-  querySelector('#home').style.display = '';
-  querySelector('#about').style.display = 'none';
+void main()
+{
+    
+    bootstrapMapper();
+
+    Logger.root.level = Level.FINEST;
+    Logger.root.onRecord.listen((LogRecord r) { print(r.message); });
+
+    
+    applicationFactory()
+        .addModule(new MyAppModule())
+        .rootContextType (MainController)
+        .run();
 }

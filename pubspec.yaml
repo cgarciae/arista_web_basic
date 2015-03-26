@@ -8,6 +8,7 @@ dependencies:
   browser: any
   googleapis: any
   googleapis_auth: any
+  mock: any
   redstone: any
   redstone_mapper: any
   redstone_mapper_mongo: any

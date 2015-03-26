@@ -4,9 +4,9 @@ part of aristadart.server;
 @app.Route('/query/:collection', methods: const [app.POST])
 @Private(ADMIN)
 @Catch()
-queryCollection (@app.Body(app.JSON) Map query, String collection)
+queryCollection (@app.Attr() MongoDb dbConn, @app.Body(app.JSON) Map query, String collection)
 {
-    return db.collection (collection)
+    return dbConn.collection (collection)
             .find(query)
             .toList();
 }

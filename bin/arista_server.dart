@@ -7,6 +7,8 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:redstone/server.dart' as app;
+import "package:googleapis_auth/auth.dart" as auth;
+import 'package:googleapis/oauth2/v2.dart' as oauth;
 import 'package:redstone/query_map.dart';
 import 'package:redstone_mapper_mongo/manager.dart';
 import 'package:redstone_mapper_mongo/service.dart';
@@ -39,8 +41,8 @@ String newId () => new ObjectId().toHexString();
 
 HttpSession get session => app.request.session;
 
-MongoDb get db => app.request.attributes.dbConn;
-GridFS get fs => new GridFS(db.innerConn);
+
+
 String get userId => app.request.headers.authorization;
 set userId (String value) => app.request.headers.authorization = value;
 
@@ -96,24 +98,6 @@ Future<List<dynamic>> deleteFiles (GridFS fs, dynamic fileSelector)
         
 }
 
-Future<List<dynamic>> deleteFile (String id)
-{
-    var fileId = StringToId(id);
-    
-    var removeFiles = fs.files.remove (where.id (fileId));
-    var removeChunks = fs.chunks.remove (where.eq ('files_id', fileId));
-        
-    return Future.wait([removeChunks, removeFiles]);  
-}
-
-Stream<List<int>> getData (GridOut gridOut)
-{
-    var controller = new StreamController<List<int>>();
-    var sink = new IOSink (controller);
-    gridOut.writeTo(sink).then((n) => sink.close());
-    return controller.stream;
-}
-
 String bytesToString (List<int> list)
 {    
     return conv.UTF8.decode (list);
@@ -137,10 +121,9 @@ Future<dynamic> streamedResponseToObject (Type type, http.StreamedResponse resp)
 }
 
 
-ModifierBuilder getModifierBuilder (Object obj, [MongoDb dbConn])
+ModifierBuilder getModifierBuilder (Object obj, dynamic encoder (dynamic obj))
 {
-    dbConn = dbConn == null ? db : dbConn;
-    Map<String, dynamic> map = dbConn.encode(obj);
+    Map<String, dynamic> map = encoder (obj);
     
     map = cleanMap (map);
 
